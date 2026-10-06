@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Acknowledger URL Reporter — Settings</title>
+<style>
+  body { font-family: Inter, system-ui, sans-serif; max-width: 420px; margin: 40px auto; color: #16202E; }
+  label { display: block; font-weight: 600; font-size: 13px; margin: 14px 0 6px; }
+  input { width: 100%; padding: 9px 11px; border: 1px solid #D3DBE6; border-radius: 8px; }
+  button { margin-top: 16px; padding: 10px 16px; border: none; border-radius: 8px; background: #1D5B9E; color: #fff; font-weight: 600; cursor: pointer; }
+  .ok { color: #2E9E5B; font-size: 13px; margin-top: 10px; }
+  p { color: #687E97; font-size: 12.5px; line-height: 1.6; }
+</style>
+</head>
+<body>
+  <h2>URL Reporter settings</h2>
+  <p>Paste the same device token the desktop agent created (found in its
+     <code>agent_config.json</code>) so browser activity attaches to the same person.</p>
+  <label>Server URL</label>
+  <input id="server" placeholder="http://localhost:8000">
+  <label>Device token</label>
+  <input id="token" placeholder="paste device_token here">
+  <button id="save">Save</button>
+  <div class="ok" id="msg"></div>
+<script>
+  chrome.storage.local.get(["server_url", "device_token"], (c) => {
+    document.getElementById("server").value = c.server_url || "http://localhost:8000";
+    document.getElementById("token").value = c.device_token || "";
+  });
+  document.getElementById("save").onclick = () => {
+    chrome.storage.local.set({
+      server_url: document.getElementById("server").value.trim(),
+      device_token: document.getElementById("token").value.trim()
+    }, () => { document.getElementById("msg").textContent = "Saved."; });
+  };
+</script>
+</body>
+</html>

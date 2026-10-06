@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.db
+.env
+
+# Node
+node_modules/
+dist/
+.env
+
+# Agent
+agent/agent_config.json
+agent/agent_buffer.db

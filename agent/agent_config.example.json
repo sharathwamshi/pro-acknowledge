@@ -1,0 +1,6 @@
+{
+  "server_url": "https://1988-106-51-81-13.ngrok-free.app",
+  "heartbeat_seconds": 60,
+  "idle_threshold_seconds": 300,
+  "flush_every": 5
+}
