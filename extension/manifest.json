@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Reports the active browser tab's domain to the Acknowledger agent for accurate app & website usage.",
   "permissions": ["tabs", "idle", "storage", "alarms"],
-  "host_permissions": ["https://1988-106-51-81-13.ngrok-free.app/* "],
+  "host_permissions": ["https://proafpl.anametaiot.com/*", "http://*/*", "https://*/*"],
   "background": { "service_worker": "background.js" },
   "options_page": "options.html"
 }

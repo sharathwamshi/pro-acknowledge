@@ -70,7 +70,9 @@ BUFFER_DB = os.path.join(DATA_DIR, "agent_buffer.db")
 LOG_PATH = os.path.join(DATA_DIR, "agent.log")
 
 DEFAULTS = {
-    "server_url": "http://localhost:8000",
+    # Fallback used only if agent_config.json is missing or unreadable;
+    # agent_config.json overrides this.
+    "server_url": "https://proafpl.anametaiot.com",
     "heartbeat_seconds": 60,
     "idle_threshold_seconds": 300,
     "flush_every": 5,          # send after this many buffered heartbeats
@@ -377,7 +379,7 @@ def main():
         con.execute(
             "INSERT INTO events(ts, active_app, window_title, url, idle, ssid, bssid) "
             "VALUES(?,?,?,?,?,?,?)",
-            (dt.datetime.now().isoformat(), app, title, None, int(idle), ssid, None))
+            (dt.datetime.now().astimezone().isoformat(), app, title, None, int(idle), ssid, None))
         con.commit()
         count += 1
         if count % cfg["flush_every"] == 0:

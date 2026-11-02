@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { api } from "../api";
+import { api, APP_VERSION } from "../api";
 import { useAuth } from "../App";
 
 export default function Login() {
@@ -38,6 +38,9 @@ export default function Login() {
         <button className="btn btn-primary btn-block" onClick={submit} disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
+        <div style={{ textAlign: "center", marginTop: 16, fontSize: 11.5, color: "var(--muted)" }}>
+          Acknowledger · v{APP_VERSION}
+        </div>
       </div>
     </div>
   );

@@ -115,6 +115,7 @@ class AppCategory(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
     category = Column(String, default="neutral")     # productive|unproductive|neutral
+    kind = Column(String, default="app")             # app | website
 
 
 class Setting(Base):

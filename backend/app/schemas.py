@@ -66,6 +66,7 @@ class NetworkIn(BaseModel):
 class AppIn(BaseModel):
     name: str
     category: str
+    kind: str | None = None   # "app" | "website"; inferred if omitted
 
 
 class PasswordIn(BaseModel):

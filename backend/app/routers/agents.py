@@ -5,16 +5,33 @@ device token issued at signup, sent in the X-Device-Token header.
 """
 import datetime as dt
 import secrets
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
+from ..config import settings
 from ..database import get_db
 from ..engine import recompute_day
 from ..models import ActivityEvent, Device, User
 from ..schemas import IngestIn, SignupIn
 
 router = APIRouter(prefix="/agent", tags=["agent"])
+
+APP_TZ = ZoneInfo(settings.app_timezone)
+
+
+def _to_local_naive(iso: str) -> dt.datetime:
+    """Parse an incoming timestamp and return naive local wall-clock time in
+    APP_TZ. Handles both aware (extension sends UTC 'Z') and naive (agent sends
+    local time) inputs, so everything downstream is in one consistent zone."""
+    t = dt.datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    if t.tzinfo is not None:
+        t = t.astimezone(APP_TZ)
+    else:
+        # naive = the recruiter machine's local time, which is already APP_TZ
+        t = t.replace(tzinfo=APP_TZ)
+    return t.replace(tzinfo=None)
 
 
 @router.post("/signup")
@@ -52,7 +69,7 @@ def ingest(body: IngestIn, x_device_token: str = Header(None), db: Session = Dep
 
     affected: set[dt.date] = set()
     for e in body.events:
-        ts = dt.datetime.fromisoformat(e.ts.replace("Z", "+00:00")).replace(tzinfo=None)
+        ts = _to_local_naive(e.ts)
         db.add(ActivityEvent(
             user_id=device.user_id, device_id=device.id, ts=ts, event_type="heartbeat",
             active_app=e.active_app, window_title=e.window_title, url=e.url,

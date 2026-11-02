@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { api } from "./api";
+import { api, APP_VERSION } from "./api";
 import { Avatar } from "./components/ui";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -9,6 +9,7 @@ import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
 import Attendance from "./pages/Attendance";
 import Productivity from "./pages/Productivity";
+import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 
 const AuthCtx = createContext(null);
@@ -20,6 +21,7 @@ const IC = {
   users: <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.8M17 19a5.5 5.5 0 0 0-2.5-4.6"/></svg>,
   att: <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3.5" y="4.5" width="17" height="16" rx="2"/><path d="M3.5 9h17M8 3v3M16 3v3"/><path d="M8.5 14l2 2 4-4"/></svg>,
   prod: <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>,
+  reports: <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg>,
   set: <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.9 7.9 0 0 0 0-2l2-1.5-2-3.4-2.3 1a8 8 0 0 0-1.7-1l-.4-2.6h-4l-.4 2.6a8 8 0 0 0-1.7 1l-2.3-1-2 3.4L4.6 11a7.9 7.9 0 0 0 0 2l-2 1.5 2 3.4 2.3-1c.5.4 1.1.7 1.7 1l.4 2.6h4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.3 1 2-3.4-2-1.5Z"/></svg>,
 };
 
@@ -45,6 +47,7 @@ function Shell() {
             <NavLink to="/users">{IC.users}<span>{admin ? "Users" : "Team members"}</span></NavLink>
             <NavLink to="/attendance">{IC.att}<span>Attendance</span></NavLink>
             <NavLink to="/productivity">{IC.prod}<span>Productivity</span></NavLink>
+            <NavLink to="/reports">{IC.reports}<span>Reports</span></NavLink>
             {admin && <><div className="nav-label">Admin</div><NavLink to="/settings">{IC.set}<span>Settings</span></NavLink></>}
           </nav>
           <div className="side-user">
@@ -65,9 +68,11 @@ function Shell() {
               <Route path="/users/:id" element={<PageTitle title={admin ? "User" : "Team member"} />} />
               <Route path="/attendance" element={<PageTitle title="Attendance" />} />
               <Route path="/productivity" element={<PageTitle title="Productivity" />} />
+              <Route path="/reports" element={<PageTitle title="Reports" />} />
               <Route path="/settings" element={<PageTitle title="Settings" />} />
             </Routes>
             <div className="spacer" />
+            <span className="badge b-recruiter" title="Application version">v{APP_VERSION}</span>
             {admin ? <span className="badge b-admin">Admin · all teams</span>
                    : <span className="badge b-manager">Manager · {user.team}</span>}
           </div>
@@ -79,11 +84,12 @@ function Shell() {
               <Route path="/users/:id" element={<UserDetail />} />
               <Route path="/attendance" element={<Attendance />} />
               <Route path="/productivity" element={<Productivity />} />
+              <Route path="/reports" element={<Reports />} />
               <Route path="/settings" element={admin ? <Settings /> : <Navigate to="/dashboard" />} />
               <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>
           </div>
-          <div className="foot-brand">Powered by <b>Acknowledger</b> · Workforce intelligence</div>
+          <div className="foot-brand">Powered by <b>Acknowledger</b> · Workforce intelligence · v{APP_VERSION}</div>
         </div>
       </div>
     </>

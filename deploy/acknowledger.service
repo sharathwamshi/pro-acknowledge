@@ -1,0 +1,27 @@
+# systemd unit for the Acknowledger backend.
+# Install to /etc/systemd/system/acknowledger.service, then:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now acknowledger
+#   sudo systemctl status acknowledger      # check it's running
+#   journalctl -u acknowledger -f           # follow logs
+
+[Unit]
+Description=Acknowledger Workforce API
+After=network.target
+
+[Service]
+Type=simple
+# Adjust User and paths to match your server.
+User=www-data
+WorkingDirectory=/opt/acknowledger/backend
+# Use the venv's gunicorn with uvicorn workers for a production server.
+ExecStart=/opt/acknowledger/backend/.venv/bin/gunicorn app.main:app \
+    --workers 2 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:8000
+Restart=always
+RestartSec=3
+EnvironmentFile=/opt/acknowledger/backend/.env
+
+[Install]
+WantedBy=multi-user.target

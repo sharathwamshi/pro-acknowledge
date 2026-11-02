@@ -10,7 +10,7 @@ export default function Settings() {
   return (
     <>
       <div className="pill-tabs">
-        {[["policy", "Attendance policy"], ["networks", "Office networks"], ["apps", "App categories"], ["roles", "Managers & roles"], ["agent", "Agent & data"]]
+        {[["policy", "Attendance policy"], ["networks", "Office networks"], ["apps", "Apps & Websites"], ["roles", "Managers & roles"], ["agent", "Agent & data"]]
           .map(([k, label]) => <button key={k} className={tab === k ? "active" : ""} onClick={() => setTab(k)}>{label}</button>)}
       </div>
       {tab === "policy" && <PolicyTab flash={flash} />}
@@ -96,27 +96,71 @@ function AddNetwork({ onClose, onDone }) {
   );
 }
 
+const CAT_CLS = { productive: "b-present", unproductive: "b-absent", neutral: "b-weekend" };
+const CAT_LBL = { productive: "Productive", unproductive: "Unproductive", neutral: "Neutral" };
+
 function AppsTab({ flash }) {
+  const [kind, setKind] = useState("app");   // app | website
   const [apps, setApps] = useState(null);
+  const [disc, setDisc] = useState(null);
   const [add, setAdd] = useState(false);
-  const reload = () => api.apps().then(setApps);
+  const [del, setDel] = useState(null);
+
+  const reload = () => {
+    api.apps().then(setApps);
+    api.uncategorized().then(setDisc).catch(() => setDisc({ apps: [], websites: [] }));
+  };
   useEffect(() => { reload(); }, []);
   if (!apps) return null;
+
+  const items = apps.filter((a) => (a.kind || "app") === kind);
   const groups = { productive: [], unproductive: [], neutral: [] };
-  apps.forEach((a) => groups[a.category].push(a));
-  const cls = { productive: "b-present", unproductive: "b-absent", neutral: "b-weekend" };
-  const lbl = { productive: "Productive", unproductive: "Unproductive", neutral: "Neutral" };
-  async function recat(a, cat) { await api.recatApp(a.id, { name: a.name, category: cat }); reload(); }
-  async function del(a) { await api.delApp(a.id); reload(); }
+  items.forEach((a) => groups[a.category].push(a));
+  const discovered = disc ? (kind === "app" ? disc.apps : disc.websites) : [];
+  const noun = kind === "app" ? "application" : "website";
+
+  async function recat(a, cat) { await api.recatApp(a.id, { name: a.name, category: cat }); flash("Moved " + a.name + " to " + CAT_LBL[cat]); reload(); }
+  async function quickAdd(name, cat) {
+    try { await api.addApp({ name, category: cat, kind }); flash("Added " + name + " as " + CAT_LBL[cat]); reload(); }
+    catch (e) { flash(e.message); }
+  }
 
   return (
     <div className="card">
-      <div className="card-head"><h3>App &amp; website categories</h3><div className="spacer" /><button className="btn btn-primary btn-sm" onClick={() => setAdd(true)}>+ Add app</button></div>
+      <div className="card-head">
+        <h3>{kind === "app" ? "Applications" : "Websites"}</h3>
+        <div className="spacer" />
+        <button className="btn btn-primary btn-sm" onClick={() => setAdd(true)}>+ Add {noun}</button>
+      </div>
       <div className="card-body">
-        <div className="hint" style={{ marginBottom: 16 }}>Every productivity number depends on these labels. Re-label anything and the whole app updates.</div>
+        <div className="pill-tabs" style={{ marginBottom: 16 }}>
+          <button className={kind === "app" ? "active" : ""} onClick={() => setKind("app")}>Applications</button>
+          <button className={kind === "website" ? "active" : ""} onClick={() => setKind("website")}>Websites</button>
+        </div>
+        <div className="hint" style={{ marginBottom: 16 }}>
+          Every productivity number depends on these labels. {kind === "website" ? "Websites are matched by domain (e.g. youtube.com covers all its pages)." : "Desktop apps are matched by name."}
+        </div>
+
+        {discovered.length > 0 && (
+          <div style={{ border: "1px dashed var(--line-strong)", borderRadius: 8, padding: 14, marginBottom: 18, background: "var(--surface-2)" }}>
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>Seen recently, not categorized ({discovered.length})</div>
+            <div className="hint" style={{ marginTop: 0, marginBottom: 10 }}>Tag these from real usage — pick a category for each.</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {discovered.slice(0, 12).map((d) => (
+                <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ flex: 1, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.name} <span style={{ color: "var(--muted)" }}>· {d.hits} hits</span></span>
+                  <button className="btn btn-ghost btn-sm" onClick={() => quickAdd(d.name, "productive")}>Productive</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => quickAdd(d.name, "unproductive")}>Unproductive</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => quickAdd(d.name, "neutral")}>Neutral</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {["productive", "unproductive", "neutral"].map((cat) => (
           <div key={cat} style={{ marginBottom: 18 }}>
-            <div style={{ marginBottom: 10 }}><span className={"badge " + cls[cat]}>{lbl[cat]}</span></div>
+            <div style={{ marginBottom: 10 }}><span className={"badge " + CAT_CLS[cat]}>{CAT_LBL[cat]}</span></div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {groups[cat].length ? groups[cat].map((a) => (
                 <span key={a.id} style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid var(--line)", borderRadius: 999, padding: "5px 6px 5px 12px", fontSize: 13 }}>
@@ -124,27 +168,58 @@ function AppsTab({ flash }) {
                   <select className="inp" style={{ padding: "3px 6px", fontSize: 12 }} value={a.category} onChange={(e) => recat(a, e.target.value)}>
                     <option value="productive">P</option><option value="unproductive">U</option><option value="neutral">N</option>
                   </select>
-                  <button className="x-btn" style={{ fontSize: 16, padding: "0 4px" }} onClick={() => del(a)}>×</button>
+                  <button className="x-btn" style={{ fontSize: 16, padding: "0 4px" }} onClick={() => setDel(a)}>×</button>
                 </span>
               )) : <span style={{ color: "var(--muted)", fontSize: 13 }}>None</span>}
             </div>
           </div>
         ))}
       </div>
-      {add && <AddApp onClose={() => setAdd(false)} onDone={() => { setAdd(false); reload(); flash("App added"); }} />}
+
+      {add && <AddApp kind={kind} onClose={() => setAdd(false)} onDone={(name) => { setAdd(false); reload(); flash("Added " + name); }} />}
+      {del && (
+        <Modal title={"Remove " + noun} onClose={() => setDel(null)}
+          footer={<><button className="btn btn-ghost" onClick={() => setDel(null)}>Cancel</button>
+            <button className="btn btn-danger" onClick={async () => { const n = del.name; await api.delApp(del.id); setDel(null); reload(); flash("Removed " + n); }}>Remove</button></>}>
+          <div style={{ fontSize: 13.5, color: "var(--ink-soft)" }}>Remove <b>{del.name}</b> from categories? Past data keeps its existing label; new activity for it becomes uncategorized until you add it again.</div>
+        </Modal>
+      )}
     </div>
   );
 }
 
-function AddApp({ onClose, onDone }) {
-  const [name, setName] = useState(""); const [cat, setCat] = useState("productive"); const [err, setErr] = useState("");
-  async function save() { if (!name) { setErr("Enter an app name"); return; } try { await api.addApp({ name, category: cat }); onDone(); } catch (e) { setErr(e.message); } }
+function AddApp({ kind, onClose, onDone }) {
+  const [name, setName] = useState("");
+  const [cat, setCat] = useState("productive");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const isWeb = kind === "website";
+
+  // live preview of how a website domain will be stored
+  const preview = isWeb ? name.trim().replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0].toLowerCase() : name.trim();
+
+  async function save() {
+    if (!name.trim()) { setErr(isWeb ? "Enter a website domain" : "Enter an application name"); return; }
+    setBusy(true); setErr("");
+    try { await api.addApp({ name, category: cat, kind }); onDone(preview || name.trim()); }
+    catch (e) { setErr(e.message); setBusy(false); }
+  }
   return (
-    <Modal title="Add app category" onClose={onClose}
-      footer={<><button className="btn btn-ghost" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={save}>Add</button></>}>
+    <Modal title={isWeb ? "Add website" : "Add application"} onClose={onClose}
+      footer={<><button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary" onClick={save} disabled={busy}>{busy ? "Adding…" : "Add"}</button></>}>
       {err && <div className="err">{err}</div>}
-      <Field label="App or website name"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. GitHub" /></Field>
-      <Field label="Category"><select value={cat} onChange={(e) => setCat(e.target.value)}><option value="productive">Productive</option><option value="unproductive">Unproductive</option><option value="neutral">Neutral</option></select></Field>
+      <Field label={isWeb ? "Website domain" : "Application name"}>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={isWeb ? "e.g. youtube.com" : "e.g. Visual Studio Code"} autoFocus />
+      </Field>
+      {isWeb && preview && <div className="hint" style={{ marginTop: -6, marginBottom: 12 }}>Will be saved as <b>{preview}</b> and match all its pages.</div>}
+      <Field label="Category">
+        <select value={cat} onChange={(e) => setCat(e.target.value)}>
+          <option value="productive">Productive</option>
+          <option value="unproductive">Unproductive</option>
+          <option value="neutral">Neutral</option>
+        </select>
+      </Field>
     </Modal>
   );
 }

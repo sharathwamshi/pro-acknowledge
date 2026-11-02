@@ -6,6 +6,8 @@ PostgreSQL in production by setting DATABASE_URL.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+APP_VERSION = "01.00.01"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
@@ -18,8 +20,15 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_hours: int = 12
 
-    # Comma-separated list of allowed frontend origins (CORS).
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    # All attendance/activity times are computed in this timezone. The agent
+    # sends local time and the extension sends UTC; both are normalized to this.
+    app_timezone: str = "Asia/Kolkata"
+
+    # Comma-separated list of allowed origins (CORS), or "*" for any.
+    # The browser extension (chrome-extension://...) and the desktop agent are
+    # cross-origin, so "*" is the simplest safe default — auth uses a bearer
+    # token in a header, not cookies, so credentials aren't needed.
+    cors_origins: str = "*"
 
 
 settings = Settings()

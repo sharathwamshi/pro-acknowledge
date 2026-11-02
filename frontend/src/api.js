@@ -1,7 +1,22 @@
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+export const APP_VERSION = "01.00.01";
 
 function token() {
   return localStorage.getItem("ack_token");
+}
+
+// Download a file (xlsx, etc.) from an authenticated endpoint.
+export async function downloadFile(path, filename) {
+  const headers = {};
+  const t = token();
+  if (t) headers.Authorization = `Bearer ${t}`;
+  const res = await fetch(BASE + path, { headers });
+  if (!res.ok) throw new Error("Export failed (" + res.status + ")");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
 async function req(path, { method = "GET", body } = {}) {
@@ -57,6 +72,9 @@ export const api = {
   addApp: (body) => req("/settings/apps", { method: "POST", body }),
   recatApp: (id, body) => req(`/settings/apps/${id}`, { method: "PUT", body }),
   delApp: (id) => req(`/settings/apps/${id}`, { method: "DELETE" }),
+  uncategorized: (days = 14) => req(`/settings/uncategorized?days=${days}`),
+
+  reportSummary: (start, end) => req(`/reports/summary?start=${start}&end=${end}`),
   getAgent: () => req("/settings/agent"),
   putAgent: (body) => req("/settings/agent", { method: "PUT", body }),
   changeAdminPassword: (password) => req("/settings/admin-password", { method: "PUT", body: { password } }),

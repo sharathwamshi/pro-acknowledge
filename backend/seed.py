@@ -26,9 +26,11 @@ HOME_SSIDS = ["JioFiber-7A2", "Airtel_Home", "ACT_Fibernet", "Home-WiFi", "TP-Li
 
 APPS = {
     "productive": ["Naukri RMS", "LinkedIn Recruiter", "Zoho Recruit (ATS)", "Outlook",
-                   "Gmail", "MS Teams", "Zoom", "Excel", "Indeed", "Word"],
-    "unproductive": ["YouTube", "Instagram", "WhatsApp Web", "Facebook", "Netflix", "Reddit"],
-    "neutral": ["Chrome (misc)", "File Explorer", "Settings"],
+                   "Gmail", "MS Teams", "Zoom", "Excel", "Indeed", "Word",
+                   "naukri.com", "linkedin.com", "indeed.com", "mail.google.com"],
+    "unproductive": ["YouTube", "Instagram", "WhatsApp Web", "Facebook", "Netflix", "Reddit",
+                     "youtube.com", "instagram.com", "facebook.com", "reddit.com"],
+    "neutral": ["Chrome (misc)", "File Explorer", "Settings", "google.com", "chatgpt.com"],
 }
 RECRUITERS = ["Priya Sharma", "Arjun Mehta", "Neha Verma", "Rohan Gupta", "Ananya Iyer",
               "Karan Singh", "Divya Nair", "Vikram Reddy", "Sana Khan", "Aditya Joshi",
@@ -54,7 +56,8 @@ def run():
         db.add(OfficeNetwork(label=label, ssid=ssid, bssid=bssid, ip_range=ip))
     for cat, names in APPS.items():
         for n in names:
-            db.add(AppCategory(name=n, category=cat))
+            kind = "website" if ("." in n and " " not in n) else "app"
+            db.add(AppCategory(name=n, category=cat, kind=kind))
 
     admin = User(name="Operations Admin", email="admin@acknowledger.in", role="admin",
                  team="Management", username="admin", password_hash=hash_password("admin123"))
