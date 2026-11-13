@@ -1,10 +1,18 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api";
-import { SplitBar, Empty } from "../components/ui";
+import { Avatar, SplitBar, Empty } from "../components/ui";
+
+function band(score) {
+  if (score > 0.7) return { c: "var(--present)", bg: "var(--present-bg)", label: "High" };
+  if (score > 0.5) return { c: "var(--late)", bg: "var(--late-bg)", label: "Mid" };
+  return { c: "var(--absent)", bg: "var(--absent-bg)", label: "Low" };
+}
 
 export default function Dashboard() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
+  const nav = useNavigate();
 
   useEffect(() => { api.dashboard().then(setD).catch((e) => setErr(e.message)); }, []);
 
@@ -53,7 +61,68 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      <WeeklyRanking ranking={d.ranking || []} nav={nav} />
     </>
+  );
+}
+
+function WeeklyRanking({ ranking, nav }) {
+  if (!ranking.length) return null;
+  const ranked = ranking.filter((r) => r.productive_hours > 0);
+  const top = ranked.slice(0, 3);
+  const bottom = ranked.length > 3 ? ranked.slice(-3).reverse() : [];
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div className="grid-2">
+        <PerfCard title="Most productive this week" people={top} nav={nav} medal />
+        {bottom.length > 0 && <PerfCard title="Needs attention this week" people={bottom} nav={nav} />}
+      </div>
+
+      <div className="card" style={{ marginTop: 16 }}>
+        <div className="card-head"><h3>Weekly productivity ranking</h3><span style={{ marginLeft: "auto", fontSize: 12, color: "var(--muted)" }}>Mon–today</span></div>
+        <div className="card-body">
+          {ranked.map((r) => {
+            const b = band(r.score);
+            return (
+              <div key={r.id} className="bar-row clickable" style={{ cursor: "pointer" }} onClick={() => nav(`/users/${r.id}`)}>
+                <div style={{ width: 26, textAlign: "right", color: "var(--muted)", fontWeight: 600, flex: "none" }} className="tnum">{r.rank}</div>
+                <div className="nm" title={r.name}>{r.name}</div>
+                <div className="bar-track"><div className="bar-fill" style={{ width: Math.round(r.score * 100) + "%", background: b.c }} /></div>
+                <div className="vv tnum" style={{ color: b.c, fontWeight: 600 }}>{Math.round(r.score * 100)}%</div>
+              </div>
+            );
+          })}
+          {!ranked.length && <Empty title="No data yet" msg="Productivity ranking appears once activity is recorded this week." />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PerfCard({ title, people, nav, medal }) {
+  return (
+    <div className="card">
+      <div className="card-head"><h3>{title}</h3></div>
+      <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {people.map((p, i) => {
+          const b = band(p.score);
+          return (
+            <div key={p.id} onClick={() => nav(`/users/${p.id}`)}
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 10px", borderRadius: 10, cursor: "pointer", background: b.bg }}>
+              <div style={{ fontWeight: 700, fontSize: 15, width: 22, textAlign: "center", color: b.c }}>{medal ? ["🥇", "🥈", "🥉"][i] || i + 1 : "▾"}</div>
+              <Avatar name={p.name} />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>{p.productive_hours}h productive</div>
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 18, color: b.c }} className="tnum">{Math.round(p.score * 100)}%</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

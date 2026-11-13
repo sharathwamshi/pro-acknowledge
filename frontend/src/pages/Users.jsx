@@ -58,9 +58,10 @@ export default function Users() {
                   {admin && <td style={{ fontSize: 12, color: "var(--muted)" }} className="tnum">{u.device || "—"}</td>}
                   {admin && (
                     <td style={{ textAlign: "right", whiteSpace: "nowrap" }} onClick={(e) => e.stopPropagation()}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setModal({ type: "edit", user: u })}>Edit</button>
                       {u.role === "recruiter"
-                        ? <button className="btn btn-ghost btn-sm" onClick={() => setModal({ type: "make", user: u })}>Make manager</button>
-                        : <button className="btn btn-ghost btn-sm" onClick={() => setModal({ type: "team", user: u })}>Edit team</button>}
+                        ? <button className="btn btn-ghost btn-sm" style={{ marginLeft: 8 }} onClick={() => setModal({ type: "make", user: u })}>Make manager</button>
+                        : <button className="btn btn-ghost btn-sm" style={{ marginLeft: 8 }} onClick={() => setModal({ type: "team", user: u })}>Edit team</button>}
                       <button className="btn btn-danger btn-sm" style={{ marginLeft: 8 }} onClick={() => setModal({ type: "delete", user: u })}>Delete</button>
                     </td>
                   )}
@@ -72,11 +73,40 @@ export default function Users() {
       </div>
 
       {modal?.type === "add" && <AddModal onClose={() => setModal(null)} onDone={() => { setModal(null); reload(); flash("Recruiter added"); }} managers={users.filter((u) => u.role === "manager")} />}
+      {modal?.type === "edit" && <EditModal target={modal.user} managers={users.filter((u) => u.role === "manager")} onClose={() => setModal(null)} onDone={() => { setModal(null); reload(); flash("User updated"); }} />}
       {modal?.type === "make" && <MakeManagerModal target={modal.user} recruiters={users.filter((u) => u.role === "recruiter")} onClose={() => setModal(null)} onDone={() => { setModal(null); reload(); flash("Manager created"); }} />}
       {modal?.type === "team" && <TeamModal manager={modal.user} recruiters={users.filter((u) => u.role === "recruiter")} onClose={() => setModal(null)} onDone={() => { setModal(null); reload(); flash("Team updated"); }} />}
       {modal?.type === "delete" && <DeleteModal target={modal.user} onClose={() => setModal(null)} onDone={() => { setModal(null); reload(); flash("User deleted"); }} />}
       <Toast msg={toast} />
     </>
+  );
+}
+
+function EditModal({ target, managers, onClose, onDone }) {
+  const [name, setName] = useState(target.name);
+  const [email, setEmail] = useState(target.email);
+  const [mgr, setMgr] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function save() {
+    if (!name.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setErr("Enter a name and a valid email"); return; }
+    setBusy(true); setErr("");
+    try { await api.editUser(target.id, { name, email, manager_id: mgr ? +mgr : null }); onDone(); }
+    catch (e) { setErr(e.message); setBusy(false); }
+  }
+  return (
+    <Modal title="Edit user" onClose={onClose}
+      footer={<><button className="btn btn-ghost" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save changes"}</button></>}>
+      {err && <div className="err">{err}</div>}
+      <div className="field"><label>Full name</label><input value={name} onChange={(e) => setName(e.target.value)} /></div>
+      <div className="field"><label>Email</label><input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+      <div className="field"><label>Reassign to manager (optional)</label>
+        <select value={mgr} onChange={(e) => setMgr(e.target.value)}>
+          <option value="">— Keep current ({target.team}) —</option>
+          {managers.filter((m) => m.id !== target.id).map((m) => <option key={m.id} value={m.id}>{m.name} · {m.team}</option>)}
+        </select>
+      </div>
+    </Modal>
   );
 }
 

@@ -24,7 +24,7 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <div className="login-card">
-        <div className="brand"><div className="brand-mark">A</div><div className="brand-name">Acknow<span>ledger</span></div></div>
+        <div className="brand"><div className="brand-mark">K2</div><div className="brand-name">Key<span>2</span>View</div></div>
         <div className="login-sub">Workforce &amp; Attendance Console. Sign in to view your team.</div>
         {err && <div className="err">{err}</div>}
         <div className="field"><label>Username</label>
@@ -39,7 +39,7 @@ export default function Login() {
           {busy ? "Signing in…" : "Sign in"}
         </button>
         <div style={{ textAlign: "center", marginTop: 16, fontSize: 11.5, color: "var(--muted)" }}>
-          Acknowledger · v{APP_VERSION}
+          Key2View · Powered by Acknowledger First · v{APP_VERSION}
         </div>
       </div>
     </div>

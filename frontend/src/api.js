@@ -1,5 +1,5 @@
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
-export const APP_VERSION = "01.00.01";
+export const APP_VERSION = "01.00.02";
 
 function token() {
   return localStorage.getItem("ack_token");
@@ -53,6 +53,7 @@ export const api = {
   users: () => req("/users"),
   user: (id) => req(`/users/${id}`),
   addRecruiter: (body) => req("/users", { method: "POST", body }),
+  editUser: (id, body) => req(`/users/${id}`, { method: "PUT", body }),
   makeManager: (id, body) => req(`/users/${id}/make-manager`, { method: "POST", body }),
   setTeam: (id, ids) => req(`/users/${id}/team`, { method: "POST", body: { recruiter_ids: ids } }),
   demote: (id) => req(`/users/${id}/demote`, { method: "POST" }),

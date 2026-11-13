@@ -33,7 +33,7 @@ def _ensure_columns():
 
 _ensure_columns()
 
-app = FastAPI(title="Acknowledger — Workforce API", version=APP_VERSION)
+app = FastAPI(title="Key2View — Workforce API", version=APP_VERSION)
 
 _origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 _allow_all = "*" in _origins

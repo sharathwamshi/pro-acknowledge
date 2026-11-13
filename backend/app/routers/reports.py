@@ -94,13 +94,41 @@ def summary(start: str = None, end: str = None,
     ids = visible_user_ids(user, db)
     people, apps, sites = _collect(db, ids, s, e)
     team_prod = sum(p["productive_hours"] for p in people)
+    team_unprod = sum(p["unproductive_hours"] for p in people)
     team_present = sum(p["present_hours"] for p in people)
     avg_score = round(sum(p["score"] for p in people) / len(people), 2) if people else 0
+
+    # productive / unproductive / neutral split (hours) across the range
+    rows = db.query(AttendanceDay).filter(
+        AttendanceDay.user_id.in_(ids), AttendanceDay.date >= s, AttendanceDay.date <= e).all()
+    split = {
+        "productive": round(sum(r.prod_min for r in rows) / 60, 1),
+        "unproductive": round(sum(r.unprod_min for r in rows) / 60, 1),
+        "neutral": round(sum(r.neut_min for r in rows) / 60, 1),
+    }
+    # browser (websites) vs applications hours — covers "Chrome usage separately"
+    browser_hours = round(sum(w["hours"] for w in sites), 1)
+    app_hours = round(sum(a["hours"] for a in apps), 1)
+
+    # daily productive-hours trend
+    by_day = {}
+    for r in rows:
+        by_day[r.date] = by_day.get(r.date, 0) + r.prod_min
+    trend = []
+    d = s
+    while d <= e:
+        trend.append({"date": d.isoformat(), "label": d.strftime("%d %b"),
+                      "hours": round(by_day.get(d, 0) / 60, 1)})
+        d += dt.timedelta(days=1)
+
     return {
         "start": s.isoformat(), "end": e.isoformat(), "people_count": len(people),
         "team_productive_hours": round(team_prod, 1),
+        "team_unproductive_hours": round(team_unprod, 1),
         "team_present_hours": round(team_present, 1),
-        "avg_score": avg_score,
+        "avg_score": avg_score, "split": split,
+        "browser_hours": browser_hours, "app_hours": app_hours,
+        "trend": trend,
         "people": people, "top_apps": apps, "top_websites": sites,
     }
 
@@ -139,7 +167,7 @@ def export_xlsx(start: str = None, end: str = None,
     # Summary sheet (default sheet renamed)
     ws0 = wb.active
     ws0.title = "Summary"
-    ws0["A1"] = "Acknowledger — Workforce Report"
+    ws0["A1"] = "Key2View — Workforce Report"
     ws0["A1"].font = Font(size=14, bold=True)
     ws0["A2"] = f"Period: {s.isoformat()} to {e.isoformat()}"
     ws0["A3"] = f"People: {len(people)}"

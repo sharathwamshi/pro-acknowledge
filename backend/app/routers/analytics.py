@@ -47,9 +47,33 @@ def dashboard(user: User = Depends(current_user), db: Session = Depends(get_db))
         avg = round(sum(r.prod_min for r in rows) / len(rows) / 60, 1) if rows else 0
         trend.append({"label": d.strftime("%a"), "value": avg})
 
+    ranking = _weekly_ranking(db, ids, today)
+
     return {"total": len(ids), "present": present, "late": late, "absent": absent,
             "in_office": in_off, "remote": remote,
-            "active": active, "idle": idle, "offline": offline, "trend": trend}
+            "active": active, "idle": idle, "offline": offline, "trend": trend,
+            "ranking": ranking}
+
+
+def _weekly_ranking(db, ids, today):
+    """Per-employee productivity score for the current week (Mon–today),
+    highest first. Powers the dashboard leaderboard and most/least callouts."""
+    monday = today - dt.timedelta(days=today.weekday())
+    names = {u.id: u.name for u in db.query(User).filter(User.id.in_(ids)).all()}
+    out = []
+    for uid in ids:
+        rows = db.query(AttendanceDay).filter(
+            AttendanceDay.user_id == uid, AttendanceDay.date >= monday,
+            AttendanceDay.date <= today).all()
+        prod = sum(r.prod_min for r in rows)
+        tot = sum(r.prod_min + r.unprod_min + r.neut_min for r in rows)
+        out.append({"id": uid, "name": names.get(uid, "—"),
+                    "score": round(prod / tot, 2) if tot else 0,
+                    "productive_hours": round(prod / 60, 1)})
+    out.sort(key=lambda x: -x["score"])
+    for i, r in enumerate(out):
+        r["rank"] = i + 1
+    return out
 
 
 def _live_counts(db, ids):

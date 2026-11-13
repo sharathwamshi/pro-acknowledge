@@ -48,6 +48,26 @@ def add_recruiter(body: AddRecruiterIn, db: Session = Depends(get_db)):
     return {"id": u.id}
 
 
+@router.put("/{uid}", dependencies=[Depends(require_admin)])
+def edit_user(uid: int, body: AddRecruiterIn, db: Session = Depends(get_db)):
+    """Admin edits an existing user's name, email and team."""
+    u = db.get(User, uid)
+    if not u:
+        raise HTTPException(404, "Not found")
+    email = body.email.lower().strip()
+    clash = db.query(User).filter(User.email == email, User.id != uid).first()
+    if clash:
+        raise HTTPException(400, "Another user already has that email")
+    u.name = body.name.strip()
+    u.email = email
+    if body.manager_id is not None:
+        mgr = db.get(User, body.manager_id)
+        u.manager_id = body.manager_id
+        u.team = mgr.team if mgr else u.team
+    db.commit()
+    return {"ok": True}
+
+
 @router.post("/{uid}/make-manager", dependencies=[Depends(require_admin)])
 def make_manager(uid: int, body: MakeManagerIn, db: Session = Depends(get_db)):
     u = db.get(User, uid)

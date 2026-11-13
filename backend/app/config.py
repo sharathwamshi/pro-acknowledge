@@ -6,7 +6,7 @@ PostgreSQL in production by setting DATABASE_URL.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-APP_VERSION = "01.00.01"
+APP_VERSION = "01.00.02"
 
 
 class Settings(BaseSettings):

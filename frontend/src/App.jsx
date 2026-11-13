@@ -37,7 +37,7 @@ function Shell() {
       <div className="shell">
         <aside className={"sidebar" + (open ? " open" : "")}>
           <div className="side-top">
-            <div className="brand"><div className="brand-mark">A</div><div className="brand-name">Acknow<span>ledger</span></div></div>
+            <div className="brand"><div className="brand-mark">K2</div><div className="brand-name">Key<span>2</span>View</div></div>
           </div>
           <nav className="nav" onClick={close}>
             <div className="nav-label">Overview</div>
@@ -89,7 +89,7 @@ function Shell() {
               <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>
           </div>
-          <div className="foot-brand">Powered by <b>Acknowledger</b> · Workforce intelligence · v{APP_VERSION}</div>
+          <div className="foot-brand">Powered by <b>Acknowledger First</b> · v{APP_VERSION}</div>
         </div>
       </div>
     </>
